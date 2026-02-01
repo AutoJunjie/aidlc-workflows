@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-DLC Collaboration Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .room-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .room-code {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .room-code:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-discussing {
+            background: #4ade80;
+            color: #166534;
+        }
+
+        .status-locked {
+            background: #fbbf24;
+            color: #92400e;
+        }
+
+        .status-decided {
+            background: #60a5fa;
+            color: #1e40af;
+        }
+
+        .btn-leave {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-leave:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 56px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sidebar-section h3 {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .participant-list {
+            list-style: none;
+        }
+
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .participant-info {
+            flex: 1;
+        }
+
+        .participant-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .participant-role {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .participant-status {
+            font-size: 18px;
+        }
+
+        /* Host Controls */
+        .host-controls {
+            margin-top: auto;
+            padding: 16px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .host-controls h3 {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .control-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .control-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .control-btn.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .control-btn.warning {
+            background: #fbbf24;
+            color: #92400e;
+        }
+
+        .control-btn.success {
+            background: #4ade80;
+            color: #166534;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Question Area */
+        .question-area {
+            background: white;
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .question-header {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .question-progress {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .question-source {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .question-content {
+            padding: 24px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .question-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-item {
+            background: #f8f9fa;
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .option-key {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 600;
+            margin-right: 12px;
+            font-size: 13px;
+        }
+
+        .question-context {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #fff7ed;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #9a3412;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        /* Team Opinions */
+        .opinions-area {
+            background: white;
+            margin: 0 20px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .opinions-header {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .opinions-header h3 {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .opinions-count {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .opinions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .opinion-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px;
+            transition: all 0.3s;
+        }
+
+        .opinion-card.typing {
+            border: 2px dashed #667eea;
+        }
+
+        .opinion-card.submitted {
+            border: 2px solid #4ade80;
+        }
+
+        .opinion-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .opinion-card-avatar {
+            font-size: 20px;
+        }
+
+        .opinion-card-name {
+            font-size: 13px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .opinion-card-role {
+            font-size: 10px;
+            color: #999;
+        }
+
+        .opinion-card-choice {
+            background: #667eea;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 0 auto 10px;
+        }
+
+        .opinion-card-choice.empty {
+            background: #e0e0e0;
+            color: #999;
+        }
+
+        .opinion-card-reason {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .opinion-card-typing {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 60px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            margin-left: 8px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stats-label {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .stats-items {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .stat-item .key {
+            background: #667eea;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .stat-item .count {
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* My Input Area */
+        .my-input-area {
+            background: white;
+            margin: 0 20px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .my-input-header {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+        }
+
+        .my-input-header h3 {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .my-input-content {
+            padding: 20px;
+        }
+
+        .choice-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .choice-btn {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .choice-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .reason-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+            height: 80px;
+            margin-bottom: 12px;
+        }
+
+        .reason-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .submit-hint {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .submit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: #5a6fd6;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Decision Area (Tech Lead Only) */
+        .decision-area {
+            background: white;
+            margin: 0 20px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 2px solid #fbbf24;
+        }
+
+        .decision-header {
+            padding: 12px 20px;
+            background: #fef3c7;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .decision-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .decision-content {
+            padding: 20px;
+        }
+
+        .decision-stats {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .decision-confirm-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .decision-confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Locked Overlay */
+        .locked-overlay {
+            position: relative;
+        }
+
+        .locked-overlay::after {
+            content: '讨论已锁定，等待 Tech Lead 决策';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+            border-radius: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .opinions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="room-info">
+                <span class="room-name" id="roomName">需求讨论</span>
+                <span class="room-code" id="roomCode" title="点击复制">ABC123</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="status-badge status-discussing" id="statusBadge">讨论中</span>
+            <button class="btn-leave" onclick="leaveRoom()">离开房间</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>参与者 (<span id="participantCount">4</span>/6)</h3>
+                <ul class="participant-list" id="participantList">
+                    <!-- 动态生成 -->
+                </ul>
+            </div>
+
+            <!-- Host Controls -->
+            <div class="host-controls" id="hostControls">
+                <h3>流程控制</h3>
+                <div id="questionNav" style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                    当前: 问题 <span id="currentQ">3</span> / <span id="totalQ">8</span>
+                </div>
+                <button class="control-btn secondary" onclick="prevQuestion()" id="btnPrev">
+                    ◀ 上一题
+                </button>
+                <button class="control-btn warning" onclick="toggleLock()" id="btnLock">
+                    🔒 锁定讨论
+                </button>
+                <button class="control-btn primary" onclick="nextQuestion()" id="btnNext">
+                    下一题 ▶
+                </button>
+                <button class="control-btn success" onclick="exportData()" style="margin-top: 8px;">
+                    📤 导出到 AI-DLC
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Question Area -->
+            <div class="question-area">
+                <div class="question-header">
+                    <span class="question-progress">📋 问题 <span id="qNum">3</span> / <span id="qTotal">8</span></span>
+                    <span class="question-source">来自: AI-DLC</span>
+                </div>
+                <div class="question-content">
+                    <div class="question-text" id="questionText">
+                        您希望系统如何处理用户认证？
+                    </div>
+                    <div class="question-options" id="questionOptions">
+                        <!-- 动态生成 -->
+                    </div>
+                    <div class="question-context" id="questionContext">
+                        <span>💡</span>
+                        <span>背景: 这将影响后续的安全设计和用户体验</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Opinions -->
+            <div class="opinions-area">
+                <div class="opinions-header">
+                    <h3>团队意见</h3>
+                    <span class="opinions-count"><span id="submittedCount">3</span>/4 已提交</span>
+                </div>
+                <div class="opinions-grid" id="opinionsGrid">
+                    <!-- 动态生成 -->
+                </div>
+                <div class="stats-bar">
+                    <span class="stats-label">倾向统计:</span>
+                    <div class="stats-items" id="statsItems">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Input Area -->
+            <div class="my-input-area" id="myInputArea">
+                <div class="my-input-header">
+                    <h3>✏️ 我的意见</h3>
+                </div>
+                <div class="my-input-content">
+                    <div class="choice-buttons" id="choiceButtons">
+                        <!-- 动态生成 -->
+                    </div>
+                    <textarea class="reason-input" id="reasonInput" placeholder="输入你的理由（可选）"></textarea>
+                    <div class="submit-row">
+                        <span class="submit-hint">💡 提交后仍可修改</span>
+                        <button class="submit-btn" id="submitBtn" onclick="submitOpinion()">提交我的意见</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Area (Tech Lead Only) -->
+            <div class="decision-area hidden" id="decisionArea">
+                <div class="decision-header">
+                    <span>🎯</span>
+                    <h3>最终决策</h3>
+                    <span style="margin-left: auto; font-size: 11px; opacity: 0.8;">仅 Tech Lead 可见</span>
+                </div>
+                <div class="decision-content">
+                    <div class="decision-stats" id="decisionStats">
+                        📊 团队倾向: B(2票) > C(1票) > A(0票)
+                    </div>
+                    <div class="choice-buttons" id="decisionChoiceButtons" style="margin-bottom: 16px;">
+                        <!-- 动态生成 -->
+                    </div>
+                    <textarea class="reason-input" id="decisionReasonInput" placeholder="决策理由（将记录到审计日志）"></textarea>
+                    <button class="decision-confirm-btn" onclick="confirmDecision()">
+                        ✅ 确认决策，进入下一问题
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 状态
+        let state = {
+            isHost: true,
+            isTechLead: true,
+            isLocked: false,
+            currentQuestion: 2, // 0-indexed
+            myChoice: null,
+            myReason: '',
+            submitted: false
+        };
+
+        // 模拟问题数据
+        const questions = [
+            {
+                text: "您希望构建什么类型的应用？",
+                options: [
+                    { key: "A", text: "Web 应用（浏览器访问）" },
+                    { key: "B", text: "移动应用（iOS/Android）" },
+                    { key: "C", text: "桌面应用" },
+                    { key: "D", text: "命令行工具" }
+                ],
+                context: "这将决定技术栈和开发方式"
+            },
+            {
+                text: "预期的用户规模是多少？",
+                options: [
+                    { key: "A", text: "小型（<100 用户）" },
+                    { key: "B", text: "中型（100-10000 用户）" },
+                    { key: "C", text: "大型（10000+ 用户）" },
+                    { key: "D", text: "不确定" }
+                ],
+                context: "这将影响架构设计和基础设施选择"
+            },
+            {
+                text: "您希望系统如何处理用户认证？",
+                options: [
+                    { key: "A", text: "自建用户系统（用户名密码）" },
+                    { key: "B", text: "第三方 OAuth（Google/GitHub 登录）" },
+                    { key: "C", text: "AWS Cognito 托管认证" },
+                    { key: "D", text: "企业 SSO 集成（SAML/OIDC）" }
+                ],
+                context: "这将影响后续的安全设计和用户体验"
+            },
+            {
+                text: "数据存储方案的偏好？",
+                options: [
+                    { key: "A", text: "关系型数据库（MySQL/PostgreSQL）" },
+                    { key: "B", text: "NoSQL（DynamoDB/MongoDB）" },
+                    { key: "C", text: "混合使用" },
+                    { key: "D", text: "需要建议" }
+                ],
+                context: "不同的数据模型适合不同的业务场景"
+            }
+        ];
+
+        // 模拟参与者
+        const participants = [
+            { id: 1, name: "张三", role: "tech_lead", isHost: true, avatar: "👑" },
+            { id: 2, name: "李四", role: "member", isHost: false, avatar: "👤" },
+            { id: 3, name: "王五", role: "member", isHost: false, avatar: "👤" },
+            { id: 4, name: "赵六", role: "member", isHost: false, avatar: "👤" }
+        ];
+
+        // 模拟意见数据
+        let opinions = {
+            1: { choice: "B", reason: "我们已有 Google 企业账号，OAuth 最自然", status: "submitted" },
+            2: { choice: "B", reason: "OAuth 用户体验更好", status: "submitted" },
+            3: { choice: "C", reason: "Cognito 可以省很多开发量", status: "submitted" },
+            4: { choice: null, reason: "", status: "typing" }
+        };
+
+        // 初始化
+        function init() {
+            // 加载房间和用户信息
+            const roomData = JSON.parse(localStorage.getItem('currentRoom') || '{}');
+            const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+            if (roomData.code) {
+                document.getElementById('roomCode').textContent = roomData.code;
+                document.getElementById('roomName').textContent = roomData.name || '协作会议';
+            }
+
+            state.isHost = roomData.isHost || userData.isHost || false;
+            state.isTechLead = userData.role === 'tech_lead';
+
+            // 更新 UI
+            if (!state.isHost) {
+                document.getElementById('hostControls').classList.add('hidden');
+            }
+
+            renderQuestion();
+            renderParticipants();
+            renderOpinions();
+            updateStats();
+
+            // 复制房间码功能
+            document.getElementById('roomCode').addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent);
+                showToast('房间码已复制');
+            });
+
+            // 模拟其他用户输入
+            simulateOthers();
+        }
+
+        // 渲染问题
+        function renderQuestion() {
+            const q = questions[state.currentQuestion];
+            document.getElementById('qNum').textContent = state.currentQuestion + 1;
+            document.getElementById('qTotal').textContent = questions.length;
+            document.getElementById('currentQ').textContent = state.currentQuestion + 1;
+            document.getElementById('totalQ').textContent = questions.length;
+            document.getElementById('questionText').textContent = q.text;
+
+            // 选项
+            const optionsHtml = q.options.map(opt => `
+                <div class="option-item">
+                    <span class="option-key">${opt.key}</span>
+                    ${opt.text}
+                </div>
+            `).join('');
+            document.getElementById('questionOptions').innerHTML = optionsHtml;
+
+            // 背景
+            document.getElementById('questionContext').querySelector('span:last-child').textContent =
+                '背景: ' + q.context;
+
+            // 选择按钮
+            renderChoiceButtons('choiceButtons', (key) => {
+                state.myChoice = key;
+                renderChoiceButtons('choiceButtons');
+            });
+
+            // 决策区选择按钮
+            renderChoiceButtons('decisionChoiceButtons', (key) => {
+                state.decisionChoice = key;
+                renderChoiceButtons('decisionChoiceButtons');
+            }, state.decisionChoice);
+        }
+
+        // 渲染选择按钮
+        function renderChoiceButtons(containerId, onClick, selectedKey) {
+            const q = questions[state.currentQuestion];
+            const container = document.getElementById(containerId);
+            const selected = selectedKey !== undefined ? selectedKey : state.myChoice;
+
+            container.innerHTML = q.options.map(opt => `
+                <button class="choice-btn ${selected === opt.key ? 'selected' : ''}"
+                        onclick="${onClick ? `(${onClick.toString()})('${opt.key}')` : ''}">
+                    ${opt.key}
+                </button>
+            `).join('') + `
+                <button class="choice-btn ${selected === 'X' ? 'selected' : ''}"
+                        onclick="${onClick ? `(${onClick.toString()})('X')` : ''}">
+                    X
+                </button>
+            `;
+        }
+
+        // 渲染参与者列表
+        function renderParticipants() {
+            const list = document.getElementById('participantList');
+            list.innerHTML = participants.map(p => {
+                const opinion = opinions[p.id];
+                let statusIcon = '⏳';
+                if (opinion && opinion.status === 'submitted') {
+                    statusIcon = '✅';
+                } else if (opinion && opinion.status === 'typing') {
+                    statusIcon = '✏️';
+                }
+
+                return `
+                    <li class="participant-item">
+                        <div class="participant-avatar">${p.avatar}</div>
+                        <div class="participant-info">
+                            <div class="participant-name">${p.name}</div>
+                            <div class="participant-role">${p.role === 'tech_lead' ? 'Tech Lead' : '成员'}${p.isHost ? ' · 主持人' : ''}</div>
+                        </div>
+                        <div class="participant-status">${statusIcon}</div>
+                    </li>
+                `;
+            }).join('');
+
+            document.getElementById('participantCount').textContent = participants.length;
+        }
+
+        // 渲染意见卡片
+        function renderOpinions() {
+            const grid = document.getElementById('opinionsGrid');
+            let submittedCount = 0;
+
+            grid.innerHTML = participants.map(p => {
+                const opinion = opinions[p.id];
+                const isSubmitted = opinion && opinion.status === 'submitted';
+                const isTyping = opinion && opinion.status === 'typing';
+
+                if (isSubmitted) submittedCount++;
+
+                let cardClass = 'opinion-card';
+                if (isSubmitted) cardClass += ' submitted';
+                if (isTyping) cardClass += ' typing';
+
+                return `
+                    <div class="${cardClass}">
+                        <div class="opinion-card-header">
+                            <span class="opinion-card-avatar">${p.avatar}</span>
+                            <span class="opinion-card-name">${p.name}</span>
+                        </div>
+                        ${isSubmitted ? `
+                            <div class="opinion-card-choice">${opinion.choice}</div>
+                            <div class="opinion-card-reason">${opinion.reason || '(未填写理由)'}</div>
+                        ` : isTyping ? `
+                            <div class="opinion-card-choice empty">?</div>
+                            <div class="opinion-card-typing">
+                                输入中
+                                <div class="typing-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="opinion-card-choice empty">?</div>
+                            <div class="opinion-card-typing">等待输入...</div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('submittedCount').textContent = submittedCount;
+        }
+
+        // 更新统计
+        function updateStats() {
+            const q = questions[state.currentQuestion];
+            const counts = {};
+            q.options.forEach(opt => counts[opt.key] = 0);
+            counts['X'] = 0;
+
+            Object.values(opinions).forEach(op => {
+                if (op.status === 'submitted' && op.choice) {
+                    counts[op.choice] = (counts[op.choice] || 0) + 1;
+                }
+            });
+
+            const statsHtml = Object.entries(counts)
+                .filter(([key, count]) => count > 0 || q.options.some(o => o.key === key))
+                .sort((a, b) => b[1] - a[1])
+                .map(([key, count]) => `
+                    <div class="stat-item">
+                        <span class="key">${key}</span>
+                        <span class="count">${count}票</span>
+                    </div>
+                `).join('');
+
+            document.getElementById('statsItems').innerHTML = statsHtml;
+
+            // 更新决策区统计
+            const sortedStats = Object.entries(counts)
+                .filter(([key, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1])
+                .map(([key, count]) => `${key}(${count}票)`)
+                .join(' > ');
+
+            document.getElementById('decisionStats').innerHTML =
+                `📊 团队倾向: ${sortedStats || '暂无投票'}`;
+        }
+
+        // 提交意见
+        function submitOpinion() {
+            if (!state.myChoice) {
+                showToast('请先选择一个选项');
+                return;
+            }
+
+            const reason = document.getElementById('reasonInput').value;
+
+            // 更新本地状态
+            opinions[4] = {
+                choice: state.myChoice,
+                reason: reason,
+                status: 'submitted'
+            };
+
+            state.submitted = true;
+
+            renderOpinions();
+            renderParticipants();
+            updateStats();
+
+            showToast('意见已提交');
+        }
+
+        // 切换锁定状态
+        function toggleLock() {
+            state.isLocked = !state.isLocked;
+
+            const btn = document.getElementById('btnLock');
+            const badge = document.getElementById('statusBadge');
+            const inputArea = document.getElementById('myInputArea');
+            const decisionArea = document.getElementById('decisionArea');
+
+            if (state.isLocked) {
+                btn.textContent = '🔓 解锁讨论';
+                btn.classList.remove('warning');
+                btn.classList.add('success');
+                badge.textContent = '已锁定';
+                badge.className = 'status-badge status-locked';
+                inputArea.classList.add('locked-overlay');
+
+                if (state.isTechLead) {
+                    decisionArea.classList.remove('hidden');
+                }
+
+                showToast('讨论已锁定，等待 Tech Lead 决策');
+            } else {
+                btn.textContent = '🔒 锁定讨论';
+                btn.classList.add('warning');
+                btn.classList.remove('success');
+                badge.textContent = '讨论中';
+                badge.className = 'status-badge status-discussing';
+                inputArea.classList.remove('locked-overlay');
+                decisionArea.classList.add('hidden');
+
+                showToast('讨论已解锁');
+            }
+        }
+
+        // 确认决策
+        function confirmDecision() {
+            if (!state.decisionChoice) {
+                showToast('请先选择最终决策');
+                return;
+            }
+
+            const reason = document.getElementById('decisionReasonInput').value;
+
+            showToast(`决策已确认: 选项 ${state.decisionChoice}`);
+
+            // 模拟进入下一题
+            setTimeout(() => {
+                nextQuestion();
+            }, 1000);
+        }
+
+        // 上一题
+        function prevQuestion() {
+            if (state.currentQuestion > 0) {
+                state.currentQuestion--;
+                resetQuestionState();
+                renderQuestion();
+                renderOpinions();
+                updateStats();
+            }
+        }
+
+        // 下一题
+        function nextQuestion() {
+            if (state.currentQuestion < questions.length - 1) {
+                state.currentQuestion++;
+                resetQuestionState();
+                renderQuestion();
+                renderOpinions();
+                updateStats();
+
+                // 解锁
+                if (state.isLocked) {
+                    toggleLock();
+                }
+            } else {
+                showToast('已经是最后一题了');
+            }
+        }
+
+        // 重置问题状态
+        function resetQuestionState() {
+            state.myChoice = null;
+            state.myReason = '';
+            state.submitted = false;
+            state.decisionChoice = null;
+            document.getElementById('reasonInput').value = '';
+            document.getElementById('decisionReasonInput').value = '';
+
+            // 重新模拟意见
+            opinions = {
+                1: { choice: null, reason: "", status: "typing" },
+                2: { choice: null, reason: "", status: "typing" },
+                3: { choice: null, reason: "", status: "typing" },
+                4: { choice: null, reason: "", status: "typing" }
+            };
+        }
+
+        // 导出数据
+        function exportData() {
+            const exportData = {
+                roomCode: document.getElementById('roomCode').textContent,
+                questions: questions.map((q, idx) => ({
+                    question: q.text,
+                    decision: idx === state.currentQuestion ? state.decisionChoice : null,
+                    opinions: Object.entries(opinions).map(([userId, op]) => ({
+                        user: participants.find(p => p.id === parseInt(userId))?.name,
+                        choice: op.choice,
+                        reason: op.reason
+                    }))
+                })),
+                exportedAt: new Date().toISOString()
+            };
+
+            // 下载 JSON
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aidlc-collaboration-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast('已导出协作数据');
+        }
+
+        // 离开房间
+        function leaveRoom() {
+            localStorage.removeItem('currentRoom');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // 显示 Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // 模拟其他用户输入
+        function simulateOthers() {
+            // 模拟第一个用户提交
+            setTimeout(() => {
+                opinions[1] = { choice: "B", reason: "我们已有 Google 企业账号", status: "submitted" };
+                renderOpinions();
+                renderParticipants();
+                updateStats();
+            }, 2000);
+
+            // 模拟第二个用户提交
+            setTimeout(() => {
+                opinions[2] = { choice: "B", reason: "OAuth 用户体验更好", status: "submitted" };
+                renderOpinions();
+                renderParticipants();
+                updateStats();
+            }, 4000);
+
+            // 模拟第三个用户提交
+            setTimeout(() => {
+                opinions[3] = { choice: "C", reason: "Cognito 可以省很多开发量", status: "submitted" };
+                renderOpinions();
+                renderParticipants();
+                updateStats();
+            }, 6000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
