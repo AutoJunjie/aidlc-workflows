@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD - AI-DLC 多人协作原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Sidebar TOC */
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 260px;
+            height: calc(100vh - 56px);
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .toc-title {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 12px;
+        }
+
+        .toc-list {
+            list-style: none;
+        }
+
+        .toc-list li a {
+            display: block;
+            padding: 8px 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .toc-list li a:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .toc-list li a.active {
+            background: #f0f0ff;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .toc-list li.level-2 a {
+            padding-left: 36px;
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        .main {
+            margin-left: 260px;
+            margin-top: 56px;
+            padding: 40px;
+            max-width: 900px;
+        }
+
+        .prd-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* Typography */
+        h1.doc-title {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .doc-subtitle {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            color: #444;
+        }
+
+        h4 {
+            font-size: 15px;
+            margin-top: 24px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        /* Code & Pre */
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 13px;
+            color: #e83e8c;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover td {
+            background: #fafafa;
+        }
+
+        /* Diagram Box */
+        .diagram-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .diagram-box pre {
+            background: transparent;
+            color: #333;
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* Callout */
+        .callout {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .callout-info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+        }
+
+        .callout-warning {
+            background: #fff8e7;
+            border-left: 4px solid #ff9800;
+        }
+
+        /* Section */
+        section {
+            scroll-margin-top: 80px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+            .main {
+                margin-left: 0;
+                padding: 20px;
+            }
+            .prd-content {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <h1>AI-DLC Collaboration Prototype</h1>
+        <div class="nav-links">
+            <a href="prd.html" class="active">PRD 文档</a>
+            <a href="index.html">体验原型</a>
+        </div>
+    </nav>
+
+    <!-- Sidebar TOC -->
+    <aside class="sidebar">
+        <div class="toc-title">目录</div>
+        <ul class="toc-list">
+            <li><a href="#background">一、背景与问题</a></li>
+            <li class="level-2"><a href="#pain-point">1.1 现状痛点</a></li>
+            <li class="level-2"><a href="#target-user">1.2 目标用户</a></li>
+            <li><a href="#goal">二、产品目标</a></li>
+            <li><a href="#features">三、核心功能设计</a></li>
+            <li class="level-2"><a href="#module-room">模块A：房间系统</a></li>
+            <li class="level-2"><a href="#module-question">模块B：AI内容展示区</a></li>
+            <li class="level-2"><a href="#module-opinions">模块C：团队意见面板</a></li>
+            <li class="level-2"><a href="#module-input">模块D：我的输入区</a></li>
+            <li class="level-2"><a href="#module-decision">模块E：决策区</a></li>
+            <li class="level-2"><a href="#module-control">模块F：主持人控制栏</a></li>
+            <li class="level-2"><a href="#module-integration">模块G：AI-DLC集成</a></li>
+            <li><a href="#flow">四、交互流程</a></li>
+            <li><a href="#pages">五、原型页面</a></li>
+            <li><a href="#data">六、数据结构</a></li>
+            <li><a href="#tech">七、技术方案</a></li>
+            <li><a href="#acceptance">八、验收标准</a></li>
+            <li><a href="#future">九、后续扩展</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="prd-content">
+            <h1 class="doc-title">AI-DLC 多人协作交互原型 PRD</h1>
+            <p class="doc-subtitle">产品需求文档 v1.0</p>
+
+            <!-- 一、背景与问题 -->
+            <section id="background">
+                <h2>一、背景与问题</h2>
+
+                <section id="pain-point">
+                    <h3>1.1 现状痛点</h3>
+                    <p>在使用 AI-DLC 进行团队开发时，存在明显的协作瓶颈：</p>
+
+                    <div class="diagram-box">
+<pre>当前模式：
+┌─────────────────────────────────────────────────────┐
+│                    共享屏幕                          │
+│  ┌─────────────────────────────────────────────┐   │
+│  │          AI-DLC CLI / IDE                   │   │
+│  │                                             │   │
+│  │  Q: 您希望使用哪种数据库？                    │   │
+│  │  A) MySQL  B) PostgreSQL  C) DynamoDB       │   │
+│  │                                             │   │
+│  │  [Answer]: _                                │   │
+│  └─────────────────────────────────────────────┘   │
+│                       ▲                            │
+│         ┌─────────────┼─────────────┐              │
+│         │             │             │              │
+│      张三口述      李四口述      王五口述           │
+│      "我觉得A"    "B更好吧"    "C适合我们"         │
+│                       │                            │
+│                       ▼                            │
+│                   操作者输入                        │
+│              （信息损失、效率低下）                  │
+└─────────────────────────────────────────────────────┘</pre>
+                    </div>
+
+                    <p><strong>核心问题：</strong></p>
+                    <ol>
+                        <li>只有一个人能输入，其他人只能口述</li>
+                        <li>意见容易被遗漏或误解</li>
+                        <li>讨论过程无记录，决策依据不清晰</li>
+                        <li>无法直观看到每个人的观点和倾向</li>
+                    </ol>
+                </section>
+
+                <section id="target-user">
+                    <h3>1.2 目标用户</h3>
+                    <ul>
+                        <li><strong>Tech Lead / 架构师</strong>：主持讨论，做最终决策</li>
+                        <li><strong>开发工程师</strong>：参与讨论，表达技术意见</li>
+                        <li><strong>产品经理</strong>：参与需求澄清环节</li>
+                        <li><strong>团队规模</strong>：4-6人</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- 二、产品目标 -->
+            <section id="goal">
+                <h2>二、产品目标</h2>
+
+                <h3>2.1 核心目标</h3>
+                <p>构建一个<strong>多人实时协作界面</strong>，让团队成员能够：</p>
+                <ul>
+                    <li>各自独立输入意见</li>
+                    <li>实时看到他人观点</li>
+                    <li>由 Tech Lead 汇总决策</li>
+                    <li>结果无缝对接 AI-DLC</li>
+                </ul>
+
+                <h3>2.2 设计原则</h3>
+                <table>
+                    <thead>
+                        <tr><th>原则</th><th>说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>低门槛</strong></td><td>打开浏览器即可使用，无需安装</td></tr>
+                        <tr><td><strong>实时同步</strong></td><td>所有人看到相同的讨论状态</td></tr>
+                        <tr><td><strong>角色明确</strong></td><td>主持人控节奏，决策者拍板</td></tr>
+                        <tr><td><strong>可追溯</strong></td><td>每个决策都有讨论记录</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 三、核心功能设计 -->
+            <section id="features">
+                <h2>三、核心功能设计</h2>
+
+                <h3>3.1 功能架构</h3>
+                <div class="diagram-box">
+<pre>┌────────────────────────────────────────────────────────────┐
+│                    AI-DLC Collaboration                    │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  ┌──────────────┐  ┌──────────────────────────────────┐   │
+│  │              │  │                                  │   │
+│  │   房间管理    │  │         主协作区                 │   │
+│  │              │  │                                  │   │
+│  │  - 创建房间   │  │  ┌────────────────────────────┐ │   │
+│  │  - 加入房间   │  │  │     AI 问题/内容展示       │ │   │
+│  │  - 房间码     │  │  └────────────────────────────┘ │   │
+│  │              │  │                                  │   │
+│  ├──────────────┤  │  ┌────────────────────────────┐ │   │
+│  │              │  │  │     团队意见面板            │ │   │
+│  │   参与者列表  │  │  │  ┌──────┐ ┌──────┐        │ │   │
+│  │              │  │  │  │张三  │ │李四  │ ...    │ │   │
+│  │  👑 张三     │  │  │  │选B   │ │选B   │        │ │   │
+│  │     (Tech Lead)│ │  │  │理由..│ │理由..│        │ │   │
+│  │  👤 李四     │  │  │  └──────┘ └──────┘        │ │   │
+│  │  👤 王五     │  │  └────────────────────────────┘ │   │
+│  │  👤 赵六     │  │                                  │   │
+│  │              │  │  ┌────────────────────────────┐ │   │
+│  ├──────────────┤  │  │     我的输入区              │ │   │
+│  │              │  │  │  选择: [B]                 │ │   │
+│  │   流程控制    │  │  │  理由: __________         │ │   │
+│  │  (仅主持人)   │  │  │  [提交我的意见]            │ │   │
+│  │              │  │  └────────────────────────────┘ │   │
+│  │  [上一问题]   │  │                                  │   │
+│  │  [锁定讨论]   │  │  ┌────────────────────────────┐ │   │
+│  │  [最终决策]   │  │  │     决策区 (Tech Lead)     │ │   │
+│  │  [下一问题]   │  │  │  最终选择: [  ] 理由: ___  │ │   │
+│  │              │  │  │  [确认决策并继续]           │ │   │
+│  └──────────────┘  │  └────────────────────────────┘ │   │
+│                    │                                  │   │
+│                    └──────────────────────────────────┘   │
+│                                                            │
+└────────────────────────────────────────────────────────────┘</pre>
+                </div>
+
+                <section id="module-room">
+                    <h3>模块A：房间系统</h3>
+                    <h4>A1. 创建房间</h4>
+                    <ul>
+                        <li><strong>输入</strong>：房间名称、我的昵称、选择角色（Tech Lead / 成员）</li>
+                        <li><strong>输出</strong>：生成6位房间码</li>
+                        <li><strong>规则</strong>：创建者默认为主持人</li>
+                    </ul>
+
+                    <h4>A2. 加入房间</h4>
+                    <ul>
+                        <li><strong>输入</strong>：房间码、我的昵称</li>
+                        <li><strong>输出</strong>：进入协作界面</li>
+                        <li><strong>规则</strong>：最多6人，超出提示已满</li>
+                    </ul>
+                </section>
+
+                <section id="module-question">
+                    <h3>模块B：AI内容展示区</h3>
+                    <h4>B1. 问题模式（需求分析阶段）</h4>
+                    <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────┐
+│  📋 问题 3 / 8                          来自: AI-DLC │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  您希望系统如何处理用户认证？                         │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ A) 自建用户系统（用户名密码）                 │   │
+│  │ B) 第三方OAuth（Google/GitHub登录）          │   │
+│  │ C) AWS Cognito托管认证                       │   │
+│  │ D) 企业SSO集成（SAML/OIDC）                  │   │
+│  │ X) 其他（请说明）                            │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  💡 背景: 这将影响后续的安全设计和用户体验           │
+│                                                     │
+└─────────────────────────────────────────────────────┘</pre>
+                    </div>
+                </section>
+
+                <section id="module-opinions">
+                    <h3>模块C：团队意见面板</h3>
+                    <p>每个参与者一张卡片，实时显示其输入状态：</p>
+                    <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────────────┐
+│  团队意见                                    4/5 已提交     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ 👑 张三   │ │ 👤 李四   │ │ 👤 王五   │ │ 👤 赵六   │       │
+│  │ Tech Lead│ │          │ │          │ │          │       │
+│  ├──────────┤ ├──────────┤ ├──────────┤ ├──────────┤       │
+│  │          │ │          │ │          │ │          │       │
+│  │  选择 B   │ │  选择 B   │ │  选择 C   │ │ ⏳ 输入中 │       │
+│  │          │ │          │ │          │ │          │       │
+│  │ "我们已有 │ │ "OAuth   │ │ "Cognito │ │    ...   │       │
+│  │ Google   │ │ 用户体验 │ │ 可以省很 │ │          │       │
+│  │ 企业账号" │ │ 更好"    │ │ 多开发量"│ │          │       │
+│  │          │ │          │ │          │ │          │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│                                                             │
+│  📊 倾向统计: A(0) B(2) C(1) D(0) X(0)                      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</pre>
+                    </div>
+
+                    <h4>状态指示</h4>
+                    <table>
+                        <thead>
+                            <tr><th>状态</th><th>显示</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>未开始</td><td>灰色卡片</td><td>尚未输入</td></tr>
+                            <tr><td>输入中</td><td>⏳ + 打字动画</td><td>正在编辑</td></tr>
+                            <tr><td>已提交</td><td>显示选择+理由</td><td>完成输入</td></tr>
+                            <tr><td>已修改</td><td>🔄 标记</td><td>提交后又改了</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="module-input">
+                    <h3>模块D：我的输入区</h3>
+                    <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────┐
+│  ✏️ 我的意见                                        │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  我的选择:                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐          │
+│  │  A  │ │ [B] │ │  C  │ │  D  │ │  X  │          │
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘          │
+│                                                     │
+│  我的理由 (可选):                                   │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 我们已经有Google Workspace，用户不需要记住    │   │
+│  │ 额外的密码，OAuth是最自然的选择。             │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────┐                               │
+│  │   提交我的意见   │  💡 提交后仍可修改           │
+│  └─────────────────┘                               │
+│                                                     │
+└─────────────────────────────────────────────────────┘</pre>
+                    </div>
+                </section>
+
+                <section id="module-decision">
+                    <h3>模块E：决策区（仅 Tech Lead 可见）</h3>
+                    <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────┐
+│  🎯 最终决策                           仅Tech Lead  │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  📊 团队倾向: B(2票) > C(1票) > A(0票)              │
+│                                                     │
+│  最终选择:                                          │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐          │
+│  │  A  │ │ [B] │ │  C  │ │  D  │ │  X  │          │
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘          │
+│                                                     │
+│  决策理由 (将记录到审计日志):                        │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 采纳团队多数意见，使用OAuth。                  │   │
+│  │ 虽然Cognito能省开发量，但我们已有Google账号   │   │
+│  │ 体系，OAuth对用户更友好。                     │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │          ✅ 确认决策，进入下一问题             │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+└─────────────────────────────────────────────────────┘</pre>
+                    </div>
+                </section>
+
+                <section id="module-control">
+                    <h3>模块F：主持人控制栏</h3>
+                    <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────┐
+│  🎮 流程控制                           仅主持人可见  │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  当前: 问题 3 / 8    状态: 🟢 讨论中                │
+│                                                     │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐        │
+│  │  ◀ 上一题  │ │  🔒 锁定   │ │  下一题 ▶  │        │
+│  └───────────┘ └───────────┘ └───────────┘        │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │          📤 导出当前进度到AI-DLC              │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ⚠️ 锁定后成员无法修改意见，Tech Lead可做决策       │
+│                                                     │
+└─────────────────────────────────────────────────────┘</pre>
+                    </div>
+
+                    <h4>锁定状态变化</h4>
+                    <table>
+                        <thead>
+                            <tr><th>状态</th><th>成员可操作</th><th>Tech Lead可操作</th><th>主持人可操作</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>讨论中</td><td>输入/修改意见</td><td>输入/修改意见</td><td>锁定、切换问题</td></tr>
+                            <tr><td>已锁定</td><td>只读</td><td>做最终决策</td><td>解锁、切换问题</td></tr>
+                            <tr><td>已决策</td><td>只读</td><td>只读</td><td>切换问题</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="module-integration">
+                    <h3>模块G：AI-DLC 集成</h3>
+                    <h4>G1. 数据导入（从 CLI 到协作界面）</h4>
+                    <p>CLI 通过本地 API 推送内容：</p>
+                    <pre><code>{
+  "type": "question",
+  "id": "req-q-003",
+  "content": "您希望系统如何处理用户认证？",
+  "options": [
+    {"key": "A", "text": "自建用户系统（用户名密码）"},
+    {"key": "B", "text": "第三方OAuth（Google/GitHub登录）"},
+    {"key": "C", "text": "AWS Cognito托管认证"},
+    {"key": "D", "text": "企业SSO集成（SAML/OIDC）"}
+  ],
+  "context": "这将影响后续的安全设计和用户体验"
+}</code></pre>
+
+                    <h4>G2. 数据导出（从协作界面到 CLI）</h4>
+                    <p>决策完成后推送回 CLI：</p>
+                    <pre><code>{
+  "question_id": "req-q-003",
+  "decision": {
+    "choice": "B",
+    "rationale": "采纳团队多数意见，使用OAuth...",
+    "decided_by": "张三",
+    "decided_at": "2024-01-15T10:30:00Z"
+  },
+  "discussion": {
+    "participants": ["张三", "李四", "王五", "赵六"],
+    "opinions": [
+      {"user": "张三", "choice": "B", "reason": "..."},
+      {"user": "李四", "choice": "B", "reason": "..."},
+      {"user": "王五", "choice": "C", "reason": "..."},
+      {"user": "赵六", "choice": "B", "reason": "..."}
+    ],
+    "duration_seconds": 180
+  }
+}</code></pre>
+                </section>
+            </section>
+
+            <!-- 四、交互流程 -->
+            <section id="flow">
+                <h2>四、交互流程</h2>
+                <h3>4.1 完整使用流程</h3>
+                <div class="diagram-box">
+<pre>┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  1. 创建/加入房间                                           │
+│     │                                                       │
+│     ▼                                                       │
+│  2. 等待参与者就位                                          │
+│     │                                                       │
+│     ▼                                                       │
+│  3. 主持人启动 AI-DLC CLI ──连接──▶ 协作界面                │
+│     │                                                       │
+│     ▼                                                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  4. 协作循环 (每个问题/审核项)                        │   │
+│  │     │                                               │   │
+│  │     ├──▶ 4a. AI 内容推送到协作界面                   │   │
+│  │     │                                               │   │
+│  │     ├──▶ 4b. 团队成员各自输入意见                    │   │
+│  │     │                                               │   │
+│  │     ├──▶ 4c. 主持人锁定讨论                         │   │
+│  │     │                                               │   │
+│  │     ├──▶ 4d. Tech Lead 做最终决策                   │   │
+│  │     │                                               │   │
+│  │     ├──▶ 4e. 决策同步回 AI-DLC                      │   │
+│  │     │                                               │   │
+│  │     └──▶ 4f. 进入下一个问题 ─────────────┐          │   │
+│  │                                          │          │   │
+│  │         ◀──────────────────────────────┘          │   │
+│  └─────────────────────────────────────────────────────┘   │
+│     │                                                       │
+│     ▼                                                       │
+│  5. 所有问题完成，AI-DLC 继续执行                           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</pre>
+                </div>
+            </section>
+
+            <!-- 五、原型页面 -->
+            <section id="pages">
+                <h2>五、原型页面清单</h2>
+                <table>
+                    <thead>
+                        <tr><th>页面</th><th>文件</th><th>说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>PRD 文档</td><td>prd.html</td><td>本文档</td></tr>
+                        <tr><td>首页</td><td>index.html</td><td>创建/加入房间</td></tr>
+                        <tr><td>协作主界面</td><td>room.html</td><td>核心协作功能</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 六、数据结构 -->
+            <section id="data">
+                <h2>六、数据结构</h2>
+                <h3>6.1 房间状态</h3>
+                <pre><code>interface Room {
+  id: string;              // 6位房间码
+  name: string;            // 房间名称
+  createdAt: Date;
+
+  participants: Participant[];
+
+  // 当前内容
+  currentContent: QuestionContent | ReviewContent | null;
+
+  // 讨论状态
+  discussionState: 'open' | 'locked' | 'decided';
+
+  // 历史记录
+  decisions: Decision[];
+}
+
+interface Participant {
+  id: string;
+  name: string;
+  role: 'tech_lead' | 'member';
+  isHost: boolean;         // 是否主持人
+  isOnline: boolean;
+  joinedAt: Date;
+}</code></pre>
+
+                <h3>6.2 意见与决策</h3>
+                <pre><code>interface Opinion {
+  participantId: string;
+  choice: string;          // 'A' | 'B' | 'C' | 'D' | 'X'
+  reason: string;
+  submittedAt: Date;
+  updatedAt: Date;
+  status: 'draft' | 'submitted';
+}
+
+interface Decision {
+  questionId: string;
+  choice: string;
+  rationale: string;
+  decidedBy: string;       // participantId of Tech Lead
+  decidedAt: Date;
+  opinions: Opinion[];     // 快照：决策时的所有意见
+}</code></pre>
+            </section>
+
+            <!-- 七、技术方案 -->
+            <section id="tech">
+                <h2>七、Demo 原型技术方案</h2>
+                <h3>7.1 技术选型（纯前端）</h3>
+                <table>
+                    <thead>
+                        <tr><th>技术</th><th>选择</th><th>理由</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>框架</td><td>纯 HTML/CSS/JS</td><td>零依赖，打开即用</td></tr>
+                        <tr><td>样式</td><td>内联 CSS</td><td>单文件分发</td></tr>
+                        <tr><td>P2P通信</td><td>PeerJS (WebRTC封装)</td><td>无需后端，房间码连接</td></tr>
+                        <tr><td>数据格式</td><td>JSON</td><td>标准化</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>7.2 原型范围</h3>
+                <p><strong>包含：</strong></p>
+                <ul>
+                    <li>创建/加入房间</li>
+                    <li>参与者列表实时更新</li>
+                    <li>问题展示和意见输入</li>
+                    <li>意见实时同步（模拟）</li>
+                    <li>Tech Lead 决策功能</li>
+                    <li>主持人流程控制</li>
+                </ul>
+
+                <p><strong>不包含：</strong></p>
+                <ul>
+                    <li>真实的 CLI 集成</li>
+                    <li>数据持久化</li>
+                    <li>用户认证</li>
+                </ul>
+            </section>
+
+            <!-- 八、验收标准 -->
+            <section id="acceptance">
+                <h2>八、验收标准</h2>
+                <h3>8.1 功能验收</h3>
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>功能点</th><th>验收标准</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>创建房间</td><td>输入信息后生成6位房间码</td></tr>
+                        <tr><td>2</td><td>加入房间</td><td>输入房间码后进入协作界面</td></tr>
+                        <tr><td>3</td><td>参与者同步</td><td>新成员加入，所有人列表更新</td></tr>
+                        <tr><td>4</td><td>意见输入</td><td>选择选项+填写理由，点击提交</td></tr>
+                        <tr><td>5</td><td>意见同步</td><td>提交后其他成员实时看到</td></tr>
+                        <tr><td>6</td><td>统计更新</td><td>每次提交后，统计条自动更新</td></tr>
+                        <tr><td>7</td><td>锁定讨论</td><td>主持人锁定后，成员无法修改</td></tr>
+                        <tr><td>8</td><td>最终决策</td><td>Tech Lead 选择+理由，确认决策</td></tr>
+                        <tr><td>9</td><td>切换问题</td><td>主持人可切换到下一个问题</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>8.2 体验验收</h3>
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>体验点</th><th>验收标准</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>响应速度</td><td>意见同步延迟 < 500ms</td></tr>
+                        <tr><td>2</td><td>状态可见</td><td>明确知道谁在输入、谁已提交</td></tr>
+                        <tr><td>3</td><td>角色区分</td><td>Tech Lead 和成员看到不同的控件</td></tr>
+                        <tr><td>4</td><td>流程清晰</td><td>知道当前在哪一步，下一步是什么</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 九、后续扩展 -->
+            <section id="future">
+                <h2>九、后续扩展（不在本次原型范围）</h2>
+                <ol>
+                    <li><strong>真实 CLI 集成</strong>：实现本地 WebSocket 通信</li>
+                    <li><strong>设计审核模式</strong>：支持 Markdown 渲染和批注</li>
+                    <li><strong>异步协作</strong>：支持离线留言和 @通知</li>
+                    <li><strong>会议回放</strong>：记录和回放讨论过程</li>
+                    <li><strong>导出报告</strong>：生成 PDF 版决策报告</li>
+                </ol>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // TOC active state
+        const sections = document.querySelectorAll('section[id]');
+        const tocLinks = document.querySelectorAll('.toc-list a');
+
+        function updateToc() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateToc);
+        updateToc();
+    </script>
+</body>
+</html>
